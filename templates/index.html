@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YTMP3 Downloader</title>
+    <style>
+        /* DARK MODE STYLES */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #121212;
+            color: #ffffff;
+            position: relative;
+            padding-bottom: 80px; /* space for footer */
+            scroll-behavior: smooth;
+        }
+
+        .logo {
+            position: absolute;
+            width: 120px;
+            height: auto;
+            z-index: 1000;
+        }
+
+        .container {
+            background-color: #1e1e1e;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.7);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-top: 120px;
+            width: 400px;
+        }
+
+        .logo-container {
+            position: absolute;
+            top: -49px;
+            left: -2px;
+        }
+
+        .home-button, .read-button {
+            position: absolute;
+            top: calc(120px - 0.8cm);
+            padding: 5px 10px;
+            background-color: transparent;
+            color: #ffffff;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .home-button { left: calc(50% + 200px - 3cm); }
+        .read-button { left: calc(50% + 200px - 1.5cm); }
+
+        .home-button:hover, .read-button:hover {
+            color: #ff3b3f;
+        }
+
+        h2 {
+            color: #ffffff;
+            margin-bottom: 25px;
+        }
+
+        input[type=text] {
+            width: calc(100% + 110px);
+            margin-left: -63px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #333333;
+            margin-bottom: 20px;
+            background-color: #000000;
+            color: #ffffff;
+            font-size: 16px;
+        }
+
+        input[type=text]::placeholder {
+            color: #888888;
+        }
+
+        button.submit-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: #ff3b3f;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button.submit-btn:hover {
+            background-color: #e02b2e;
+        }
+
+        /* LOADING SPINNER */
+        .spinner {
+            border: 3px solid #fff;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* PRIVACY POLICY */
+        .privacy-policy {
+            width: 438px;
+            margin-top: 40px;
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #cccccc;
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .privacy-policy h3 {
+            margin-top: 0;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        /* FOOTER */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1.2cm;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .footer button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .footer button:hover {
+            color: #ff3b3f;
+        }
+
+        /* POPUP OVERLAY */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .popup-box {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            max-height: 70vh; /* limit height */
+            overflow-y: auto; /* scrollable */
+            text-align: left;
+            color: white;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #ff3b3f;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* scrollbar */
+        .popup-box::-webkit-scrollbar {
+            width: 6px;
+        }
+        .popup-box::-webkit-scrollbar-thumb {
+            background: #ff3b3f;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- HOME BUTTON -->
+    <button class="home-button" onclick="location.reload();">Home</button>
+
+    <!-- READ BUTTON -->
+    <button class="read-button" onclick="document.getElementById('privacy').scrollIntoView({behavior: 'smooth'});">Read</button>
+
+    <div class="container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo logo-container">
+
+        <h2>YouTube to MP3 Converter</h2>
+        <form action="/download" method="post" onsubmit="showLoading();">
+            <input type="text" id="ytlink" name="link" placeholder="Enter YouTube video link" required><br>
+            <button type="submit" id="submitBtn" class="submit-btn">
+                Convert & Download
+            </button>
+        </form>
+    </div>
+
+    <div class="privacy-policy" id="privacy">
+        <h3>Privacy Policy</h3>
+        <p><strong>Non-Commercial Use Only:</strong><br>
+        This website is created solely for educational purposes and personal use. It is not intended for commercial use.</p>
+        <p><strong>Intellectual Property Rights:</strong><br>
+        All content downloaded via this site remains the intellectual property of the original creators. We do not claim ownership of any videos or audio content.</p>
+        <p><strong>Legal Responsibility:</strong><br>
+        By using this website, you accept full responsibility for how you use downloaded content. We are not liable for any legal consequences resulting from misuse.</p>
+        <p><strong>Compliance with YouTube’s Policies:</strong><br>
+        YouTube’s content is protected by copyright and related laws. If any material is removed or restricted by YouTube, it is not the responsibility of this website. Users should respect YouTube’s terms of service.</p>
+        <p><strong>Use at Your Own Risk:</strong><br>
+        Downloads are provided “as-is.” We do not guarantee the safety, accuracy, or legality of the downloaded files. Use at your own risk.</p>
+        <p><strong>No Warranty:</strong><br>
+        This website is a personal project (“Project One”) and comes without any warranty or guarantee regarding functionality, quality, or legal compliance.</p>
+        <p><strong>Educational Purpose Statement:</strong><br>
+        This project is intended to demonstrate learning and development skills. It should not be used to infringe on copyright or for profit-making purposes.</p>
+        <p><strong>Modification & Termination:</strong><br>
+        The website owner reserves the right to modify, suspend, or terminate the service at any time without prior notice.</p>
+        <p><strong>Respect Content Creators:</strong><br>
+        Users are encouraged to support original creators by watching content directly on official platforms. All rights of original content belong to their creators.</p>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <button onclick="openPopup('popup')">CopyrightClaims</button>
+        <button onclick="openPopup('contact')">Contact</button>
+    </div>
+
+    <!-- COPYRIGHT POPUP -->
+    <div class="popup-overlay" id="popup">
+        <div class="popup-box">
+            <button class="close-btn" onclick="closePopup('popup')">✖</button>
+            <h3 style="color: red; text-align:center;">Disclaimer</h3>
+            <p><strong>Personal Use Only:</strong><br>
+            This website is provided strictly for personal, educational, or testing purposes. Commercial use is prohibited.</p>
+            <p><strong>No Ownership Claim:</strong><br>
+            All content available via this website is the property of its respective owners. This site does not claim any ownership over the videos, audio, or other content.</p>
+            <p><strong>User Responsibility:</strong><br>
+            By accessing or using this website, users assume full responsibility for compliance with local laws, copyright regulations, and YouTube’s Terms of Service.</p>
+            <p><strong>Compliance with Copyright Laws:</strong><br>
+            This site does not host, store, or distribute copyrighted content. It simply provides a tool for users to extract content for personal purposes. All copyright laws of all jurisdictions apply to the user.</p>
+            <p><strong>No Liability for Content Removal:</strong><br>
+            If any video or content is removed, restricted, or made unavailable by YouTube or its owners, the site cannot be held responsible.</p>
+            <p><strong>No Guarantee of Legal Use:</strong><br>
+            Users must ensure that downloaded content is used legally in their jurisdiction. This site makes no warranties regarding legality, safety, or correctness of downloads.</p>
+            <p><strong>Use at Your Own Risk:</strong><br>
+            Downloading content is at your own risk. This website is not responsible for any legal, technical, or financial consequences that may arise from its use.</p>
+            <p><strong>Educational & Experimental Purpose:</strong><br>
+            This project (“Project One”) is intended solely for learning, experimentation, and demonstration of technical skills.</p>
+            <p><strong>No Liability for Third-Party Content:</strong><br>
+            Any content downloaded is subject to the rights and policies of third-party platforms. This website is not liable for any disputes or claims related to third-party content.</p>
+            <p><strong>Modification and Termination Rights:</strong><br>
+            The website owner reserves the right to modify, suspend, or terminate services at any time without notice, and is not responsible for any inconvenience caused.</p>
+            <p><strong>Global Jurisdiction Disclaimer:</strong><br>
+            Users from all countries must comply with local laws. The website does not grant permission to infringe copyrights and is not subject to any single jurisdiction—users are fully responsible for legal compliance.</p>
+            <p><strong>Indemnification:</strong><br>
+            Users agree to indemnify and hold harmless the website owner from any claims, damages, or penalties arising from the use of this website.</p>
+            <p><strong>Respect for Creators:</strong><br>
+            Users are encouraged to support original creators. All rights remain with the content creators, and this website does not replace or bypass official platforms.</p>
+        </div>
+    </div>
+
+    <!-- CONTACT POPUP -->
+    <div class="popup-overlay" id="contact">
+      <div class="popup-box">
+        <button class="close-btn" onclick="closePopup('contact')">✖</button>
+        <h3 style="color: red; text-align:center;">Contact</h3>
+        <div class="popup-content" style="text-align:center;">
+          <p>If you have any questions or need support, please contact us:</p>
+          <p><strong>Email:</strong><br>
+          <a href="mailto:ytmp5905@gmail.com" style="color:#ff3b3f;">ytmp5905@gmail.com</a></p>
+          <p>- Thank you for visiting -</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        function showLoading() {
+            let btn = document.getElementById("submitBtn");
+            btn.innerHTML = '<div class="spinner"></div> Generating...';
+            btn.disabled = true;
+        }
+
+        function openPopup(id) {
+            document.getElementById(id).style.display = "flex";
+        }
+
+        function closePopup(id) {
+            document.getElementById(id).style.display = "none";
+        }
+    </script>
+</body>
+</html>
